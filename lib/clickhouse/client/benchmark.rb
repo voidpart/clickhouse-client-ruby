@@ -1,3 +1,5 @@
+require 'active_support/core_ext/string/filters'
+
 module Clickhouse::Client::Benchmark
   def exec(params, body=nil)
     query = params.try(:[], :query)
@@ -10,5 +12,11 @@ module Clickhouse::Client::Benchmark
     logger.info "[#{query.truncate(256)}] #{(runtime * 1000)} ms"
 
     result
+  end
+
+  protected
+
+  def logger
+    self.class.logger
   end
 end

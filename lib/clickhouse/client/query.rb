@@ -58,7 +58,7 @@ class Clickhouse::Client::Query
   def to_sql
     select_sql = select_values.join(', ') 
     sql = "SELECT #{ select_sql.present? ? select_sql : '*'}"
-    sql << " FROM #{from_value}"
+    sql << " FROM #{from_value}" if from_value
 
     sql << " #{join_value}" if join_value.present?
 
@@ -92,6 +92,7 @@ class Clickhouse::Client::Query
   end
 
   def _from(value)
+    value = "(#{value.to_sql})" if value.is_a? Clickhouse::Client::Query
     self.from_value = value
     self
   end

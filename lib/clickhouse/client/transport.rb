@@ -1,3 +1,8 @@
+require 'faraday'
+require 'csv'
+
+class Clickhouse::TransportError < RuntimeError; end
+
 module Clickhouse::Client::Transport
   def initialize_connection(options={})
     url = options[:url]

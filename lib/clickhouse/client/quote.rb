@@ -1,3 +1,6 @@
+require 'active_support/multibyte/chars'
+require 'active_support/duration'
+
 module Clickhouse::Client::Quote
   def quote(value)
     _quote(value)
@@ -58,7 +61,7 @@ module Clickhouse::Client::Quote
     when Date, Time then "'#{quoted_date(value)}'"
     when Symbol     then "'#{quote_string(value.to_s)}'"
     when Class      then "'#{value}'"
-    else raise TypeError, "can't quote #{value.class.name}"
+    else raise "can't quote #{value.class.name}"
     end
   end
 end
