@@ -1,3 +1,5 @@
+sudo: required
+dist: trusty
 language: ruby
 rvm:
   - 2.2
@@ -9,7 +11,7 @@ gemfile:
 
 before_install:
   - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv E0C56BD4
-  - echo "deb http://repo.yandex.ru/clickhouse/precise stable main" | sudo tee -a /etc/apt/sources.list
+  - echo "deb http://repo.yandex.ru/clickhouse/trusty stable main" | sudo tee -a /etc/apt/sources.list
   - sudo apt-get update -qq
   - sudo apt-get install clickhouse-client clickhouse-server-common -y
   - sudo service clickhouse-server start
