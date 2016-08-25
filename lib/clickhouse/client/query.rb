@@ -1,30 +1,77 @@
+require 'clickhouse/client/quote'
+
 class Clickhouse::Client::Query
+  include Clickhouse::Client::Quote
+
   MULTIPLE_VALUES = %i(select where group having order)
   SINGLE_VALUES = %i(join from limit offset)
-
   FROZEN_EMPTY_ARRAY = [].freeze
+
   MULTIPLE_VALUES.each do |name|
     class_eval <<-CODE, __FILE__, __LINE__+1
-        def #{name}_values
-          @values[:#{name}] || FROZEN_EMPTY_ARRAY
-        end
+      def #{name}_values
+        @values[:#{name}] || FROZEN_EMPTY_ARRAY
+      end
 
-        def #{name}_values=(values)
-          @values[:#{name}] = values
-        end
+      def #{name}_values=(values)
+        @values[:#{name}] = values
+      end
     CODE
   end
 
   SINGLE_VALUES.each do |name|
     class_eval <<-CODE, __FILE__, __LINE__+1
-        def #{name}_value
-          @values[:#{name}]
-        end
+      def #{name}_value
+        @values[:#{name}]
+      end
 
-        def #{name}_value=(value)
-          @values[:#{name}] = value
-        end
+      def #{name}_value=(value)
+        @values[:#{name}] = value
+      end
     CODE
+  end
+
+  class ConditionClause
+    include Clickhouse::Client::Quote
+
+    attr_accessor :args
+    attr_accessor :query
+
+    def initialize(query, *args)
+      self.query = query
+      self.args = args
+    end
+
+    def to_sql
+      if query.is_a? Hash
+        format_query_hash
+      else
+        replace_placeholders
+      end
+    end
+
+    protected
+
+    def format_query_hash
+      query.map do |key, value|
+        case value
+        when Range then "#{key} BETWEEN #{quote(value.begin)} AND #{quote(value.end)}"
+        when Clickhouse::Client::Query, Array then "#{key} in #{quote(value)}"
+        else "#{key} = #{quote(value)}"
+        end
+      end.join(' AND ')
+    end
+
+    def replace_placeholders
+      dup_args = args.clone
+      query.gsub('?') do |m|
+        _quote(dup_args.shift)
+      end
+    end
+
+    def self.format_queries(arr)
+      arr.map(&:to_sql).join(' AND ')
+    end
   end
 
   attr_reader :client
@@ -40,7 +87,7 @@ class Clickhouse::Client::Query
 
   (MULTIPLE_VALUES + SINGLE_VALUES).each do |method|
     define_method method do |*args|
-      clone.send("_#{method}", *args)
+      clone.send("#{method}!", *args)
     end
   end
 
@@ -80,31 +127,56 @@ class Clickhouse::Client::Query
     sql
   end
 
-  protected
-
-  def _order_sql
-    order_values.join(', ')
-  end
-
-  def _order(*args)
-    self.order_values += args
+  def select!(*args)
+    self.select_values += args
     self
   end
 
-  def _from(value)
+  def where!(query, *args)
+    self.where_values += [ConditionClause.new(query, *args)]
+    self
+  end
+
+  def group!(*args)
+    self.group_values += args
+    self
+  end
+
+  def join!(query)
+    self.join_value = query
+    self
+  end
+
+  def having!(query, *args)
+    self.having_values += [ConditionClause.new(query, *args)]
+    self
+  end
+
+  def from!(value)
     value = "(#{value.to_sql})" if value.is_a? Clickhouse::Client::Query
     self.from_value = value
     self
   end
 
-  def _limit(value)
+  def limit!(value)
     self.limit_value = value
     self
   end
 
-  def _offset(value)
+  def offset!(value)
     self.offset_value = value
     self
+  end
+
+  def order!(*args)
+    self.order_values += args
+    self
+  end
+
+  protected
+
+  def _order_sql
+    order_values.join(', ')
   end
 
   def _limit_sql
@@ -116,57 +188,10 @@ class Clickhouse::Client::Query
   end
 
   def _where_sql
-    _replace_placeholders(where_values)
+    ConditionClause.format_queries(where_values)
   end
 
   def _having_sql
-    _replace_placeholders(having_values)
-  end
-
-  def _replace_placeholders(values)
-    values.flat_map do |query, args|
-      if query.is_a?(Hash)
-        query.map do |key, value|
-          case value
-          when Range then "#{key} BETWEEN #{_quote(value.begin)} AND #{_quote(value.end)}"
-          else "#{key} = #{_quote(value)}"
-          end
-        end
-      else
-        dup_args = args.clone
-        query.gsub('?') do |m|
-          _quote(dup_args.shift)
-        end
-      end
-    end.join(' AND ')
-  end
-
-  def _quote(value)
-    client.quote(value)
-  end
-
-  def _select(*args)
-    self.select_values += args
-    self
-  end
-
-  def _where(query, *args)
-    self.where_values += [[query, args]]
-    self
-  end
-
-  def _group(*args)
-    self.group_values += args
-    self
-  end
-
-  def _join(query)
-    self.join_value = query
-    self
-  end
-
-  def _having(query, *args)
-    self.having_values += [[query, args]]
-    self
+    ConditionClause.format_queries(having_values)
   end
 end

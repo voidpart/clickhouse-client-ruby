@@ -34,6 +34,10 @@ module Clickhouse
       assert_equal "SELECT * WHERE one = 1", q.where(one: 1).to_sql
       assert_equal "SELECT * WHERE one < 1", q.where('one < ?', 1).to_sql
       assert_equal "SELECT * WHERE one BETWEEN 1 AND 2", q.where(one: 1..2).to_sql
+      assert_equal "SELECT * WHERE one in (1, 2)", q.where(one: (1..2).to_a).to_sql
+      assert_equal "SELECT * WHERE one in (1, 2)", q.where('one in ?', (1..2).to_a).to_sql
+      assert_equal "SELECT * WHERE one in (SELECT *)", q.where(one: q).to_sql
+      assert_equal "SELECT * WHERE one in (SELECT *)", q.where('one in ?', q).to_sql
       q = q.where(one: 1)
       assert_equal "SELECT * WHERE one = 1 AND two = 2", q.where(two: 2).to_sql
       assert_equal "SELECT * WHERE one = 1 AND two >= 2", q.where('two >= ?', 2).to_sql
