@@ -106,9 +106,12 @@ class Clickhouse::Client::Query
   def to_sql(type=nil)
     select_sql = select_values.join(', ') 
     sql = "SELECT #{ select_sql.present? ? select_sql : '*'}"
-    sql << " FROM #{from_value}" if from_value
 
-    sql << " #{join_value}" if join_value.present?
+    from_sql = _from_sql
+    sql << " #{from_sql}" if from_sql.present?
+
+    join_sql = _join_sql
+    sql << " #{join_sql}" if join_sql.present?
 
     where_sql = _where_sql
     sql << " WHERE #{where_sql}" if where_sql.present?
@@ -153,8 +156,8 @@ class Clickhouse::Client::Query
     self
   end
 
-  def join!(query)
-    self.join_value = query
+  def join!(query, arg=nil)
+    self.join_value = [query, arg]
     self
   end
 
@@ -164,7 +167,6 @@ class Clickhouse::Client::Query
   end
 
   def from!(value)
-    value = "(#{value.to_sql})" if value.is_a? Clickhouse::Client::Query
     self.from_value = value
     self
   end
@@ -189,6 +191,30 @@ class Clickhouse::Client::Query
   end
 
   protected
+
+  def _join_sql
+    return nil if join_value.blank?
+
+    query = join_value[0]
+    arg = join_value[1]
+
+    if arg.present?
+      raise 'Unknown argument type: ' + val.class.name unless arg.is_a?(Clickhouse::Client::Query)
+      query.gsub('?', quote(arg))
+    else
+      query
+    end
+  end
+
+  def _from_sql
+    value = 
+      if from_value.is_a? Clickhouse::Client::Query
+        "(#{from_value.to_sql})" 
+      else
+        from_value
+      end
+    value.present? ? "FROM #{value}" : nil
+  end
 
   def _format_sql
     " FORMAT #{format_value}"

@@ -78,5 +78,11 @@ module Clickhouse
       assert_equal "SELECT * GROUP BY one HAVING two = 2 AND three >= 3", q.having('three >= ?', 3).to_sql
       assert_equal "SELECT * GROUP BY one HAVING two = 2", q.to_sql
     end
+
+    def test_join
+      q = @query.select('*')
+      assert_equal "SELECT * ANY LEFT JOIN (SELECT *)", q.join('ANY LEFT JOIN (SELECT *)').to_sql
+      assert_equal "SELECT * ANY LEFT JOIN (SELECT *)", q.join('ANY LEFT JOIN ?', q).to_sql
+    end
   end
 end
