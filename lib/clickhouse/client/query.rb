@@ -1,10 +1,11 @@
 require 'clickhouse/client/quote'
+require 'clickhouse/client/result'
 
 class Clickhouse::Client::Query
   include Clickhouse::Client::Quote
 
   MULTIPLE_VALUES = %i(select where group having order)
-  SINGLE_VALUES = %i(join from limit offset)
+  SINGLE_VALUES = %i(join from limit offset format)
   FROZEN_EMPTY_ARRAY = [].freeze
 
   MULTIPLE_VALUES.each do |name|
@@ -79,9 +80,11 @@ class Clickhouse::Client::Query
   def initialize(client)
     @client = client
     @values = {}
+    format!('JSONCompact')
   end
 
   def initialize_copy(other)
+    @result = nil
     @values = Hash[@values]
   end
 
@@ -94,15 +97,13 @@ class Clickhouse::Client::Query
   def execute(*args)
     rows = client.query(to_sql)
     if args.length == 0
-      rows
+      result.to_a
     else
-      rows.map do |row|
-        Hash[ args.zip(row) ]
-      end
+      result.to_h(*args)
     end
   end
 
-  def to_sql
+  def to_sql(type=nil)
     select_sql = select_values.join(', ') 
     sql = "SELECT #{ select_sql.present? ? select_sql : '*'}"
     sql << " FROM #{from_value}" if from_value
@@ -124,7 +125,17 @@ class Clickhouse::Client::Query
     limit_sql = _limit_sql
     sql << limit_sql if limit_sql.present?
 
+    if type == :formatted
+      format_sql = _format_sql
+      sql << format_sql if format_sql.present?
+    end
+
     sql
+  end
+
+  def format!(value)
+    self.format_value = value
+    self
   end
 
   def select!(*args)
@@ -173,7 +184,15 @@ class Clickhouse::Client::Query
     self
   end
 
+  def result
+    @result ||= Clickhouse::Client::Result.new(client.exec(to_sql(:formatted)), format: format_value)
+  end
+
   protected
+
+  def _format_sql
+    " FORMAT #{format_value}"
+  end
 
   def _order_sql
     order_values.join(', ')

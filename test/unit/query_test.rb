@@ -7,6 +7,18 @@ module Clickhouse
       @query = @client.build
     end
 
+    def test_execute
+      q = @query.select('*').from('system.numbers').limit(2)
+      assert_equal (0..1).to_a, q.execute.flatten.map(&:to_i)
+      hash = [{one: '0'}, {one: '1'}]
+      assert_equal hash, q.execute(:one)
+    end
+
+    def test_result
+      q = @query.select('*').from('system.numbers').limit(2)
+      assert q.result.is_a? Clickhouse::Client::Result
+    end
+
     def test_from
       q = @query.select('*').from('system.numbers')
       assert_equal "SELECT * FROM numbers", q.from('numbers').to_sql
