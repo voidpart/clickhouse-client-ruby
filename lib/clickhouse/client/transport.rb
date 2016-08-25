@@ -8,7 +8,7 @@ module Clickhouse::Client::Transport
     @conn = Faraday.new(url: url) do |faraday|
       faraday.request :multipart
       faraday.request :url_encoded
-      faraday.adapter Faraday.default_adapter
+      faraday.adapter :net_http_persistent
     end
   end
 

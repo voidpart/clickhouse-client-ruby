@@ -4,6 +4,7 @@ PATH
     clickhouse-client (0.0.1)
       activesupport (>= 4.0)
       faraday
+      net-http-persistent
 
 GEM
   remote: https://rubygems.org/
@@ -20,6 +21,7 @@ GEM
     i18n (0.7.0)
     minitest (5.9.0)
     multipart-post (2.0.0)
+    net-http-persistent (2.9.4)
     rake (10.5.0)
     thread_safe (0.3.5)
     tzinfo (1.2.2)
