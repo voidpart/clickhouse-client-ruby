@@ -1,11 +1,14 @@
 require 'faraday'
+require 'uri'
 
 class Clickhouse::TransportError < RuntimeError; end
 
 module Clickhouse::Client::Transport
   def initialize_connection(options={})
     url = options[:url]
-    @conn = Faraday.new(url: url) do |faraday|
+    uri = URI(url)
+    params = uri.query ? URI.decode_www_form(uri.query) : {}
+    @conn = Faraday.new(url: url, params: params) do |faraday|
       faraday.request :multipart
       faraday.request :url_encoded
       faraday.adapter :net_http_persistent
@@ -25,7 +28,7 @@ module Clickhouse::Client::Transport
     end
 
     resp = conn.post do |req|
-      req.params = params
+      req.params.merge!(params)
       req.body = body
     end
 

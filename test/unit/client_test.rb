@@ -25,5 +25,11 @@ module Clickhouse
       assert_equal "'\\\\'", @client.quote('\\')
       assert_raises { @client.quote(nil) }
     end
+
+    def test_database
+      @client = Client.new(url: 'http://localhost:8123/?database=system')
+      result = @client.query('SELECT * FROM numbers limit 10').flatten.map(&:to_i)
+      assert_equal (0..9).to_a, result
+    end
   end
 end

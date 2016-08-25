@@ -18,9 +18,9 @@ Create config/clickhouse.yml and setup connection params to Clickhouse:
 
 ```YAML
 development:
-  url: http://127.0.0.1:8123
+  url: http://127.0.0.1:8123/?database=development
 test:
-  url: http://127.0.0.1:8123
+  url: http://127.0.0.1:8123/?database=test
 production:
   url: <%= ENV['CLICKHOUSE_URL'] %>
 ```
