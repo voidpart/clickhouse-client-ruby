@@ -77,11 +77,6 @@ module Clickhouse::Query::Resulting
 
   delegate :to_a, :to_h, to: :result
 
-  def total_entries
-    result.result_hash[:total_entries] ||= subquery_count
-    result.total_entries 
-  end
-
   def subquery_count
     client.build.from(self).select('count()').try(:to_a).try(:first).try(:first).to_i
   end

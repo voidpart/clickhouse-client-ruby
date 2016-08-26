@@ -92,6 +92,8 @@ module Clickhouse
       assert_equal 2, q.to_a.total_entries
       assert_equal 1, q.to_a.current_page
       assert_equal 1, q.to_a.total_pages
+      q = @query.select('*').from('system.numbers').page(page: '1', per_page: 2, total_entries: 1)
+      assert_equal 1, q.to_a.total_entries
     end
   end
 end
