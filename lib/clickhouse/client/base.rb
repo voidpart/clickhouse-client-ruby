@@ -1,3 +1,5 @@
+require 'clickhouse/query'
+
 module Clickhouse::Client::Base
   def initialize(options)
     initialize_connection(options)
@@ -9,6 +11,6 @@ module Clickhouse::Client::Base
   end
   
   def build
-    Clickhouse::Client::Query.new(self)
+    Clickhouse::Query.new(self)
   end
 end

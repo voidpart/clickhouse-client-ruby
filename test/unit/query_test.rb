@@ -16,7 +16,7 @@ module Clickhouse
 
     def test_result
       q = @query.select('*').from('system.numbers').limit(2)
-      assert q.result.is_a? Clickhouse::Client::Result
+      assert q.result.is_a? Clickhouse::Query::Resulting::Result
     end
 
     def test_from
@@ -83,6 +83,15 @@ module Clickhouse
       q = @query.select('*')
       assert_equal "SELECT * ANY LEFT JOIN (SELECT *)", q.join('ANY LEFT JOIN (SELECT *)').to_sql
       assert_equal "SELECT * ANY LEFT JOIN (SELECT *)", q.join('ANY LEFT JOIN ?', q).to_sql
+    end
+
+    def test_page
+      q = @query.select('*').from('system.numbers').page(page: '1', per_page: 2)
+      assert_equal 1, q.current_page
+      assert_equal %w(0 1), q.to_a.flatten
+      assert_equal 2, q.to_a.total_entries
+      assert_equal 1, q.to_a.current_page
+      assert_equal 1, q.to_a.total_pages
     end
   end
 end

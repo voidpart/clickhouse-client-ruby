@@ -6,7 +6,6 @@ module Clickhouse
     cattr_accessor :logger
 
     require 'clickhouse/client/base'
-    require 'clickhouse/client/query'
     require 'clickhouse/client/transport'
     require 'clickhouse/client/quote'
     require 'clickhouse/client/benchmark'

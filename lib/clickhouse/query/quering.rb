@@ -1,7 +1,6 @@
 require 'clickhouse/client/quote'
-require 'clickhouse/client/result'
 
-class Clickhouse::Client::Query
+module Clickhouse::Query::Quering
   include Clickhouse::Client::Quote
 
   MULTIPLE_VALUES = %i(select where group having order)
@@ -32,6 +31,12 @@ class Clickhouse::Client::Query
     CODE
   end
 
+  (MULTIPLE_VALUES + SINGLE_VALUES).each do |method|
+    define_method method do |*args|
+      clone.send("#{method}!", *args)
+    end
+  end
+
   class ConditionClause
     include Clickhouse::Client::Quote
 
@@ -57,7 +62,7 @@ class Clickhouse::Client::Query
       query.map do |key, value|
         case value
         when Range then "#{key} BETWEEN #{quote(value.begin)} AND #{quote(value.end)}"
-        when Clickhouse::Client::Query, Array then "#{key} in #{quote(value)}"
+        when Clickhouse::Query, Array then "#{key} in #{quote(value)}"
         else "#{key} = #{quote(value)}"
         end
       end.join(' AND ')
@@ -75,32 +80,9 @@ class Clickhouse::Client::Query
     end
   end
 
-  attr_reader :client
-
-  def initialize(client)
-    @client = client
-    @values = {}
-    format!('JSONCompact')
-  end
-
   def initialize_copy(other)
-    @result = nil
+    super
     @values = Hash[@values]
-  end
-
-  (MULTIPLE_VALUES + SINGLE_VALUES).each do |method|
-    define_method method do |*args|
-      clone.send("#{method}!", *args)
-    end
-  end
-
-  def execute(*args)
-    rows = client.query(to_sql)
-    if args.length == 0
-      result.to_a
-    else
-      result.to_h(*args)
-    end
   end
 
   def to_sql(type=nil)
@@ -186,10 +168,6 @@ class Clickhouse::Client::Query
     self
   end
 
-  def result
-    @result ||= Clickhouse::Client::Result.new(client.exec(to_sql(:formatted)), format: format_value)
-  end
-
   protected
 
   def _join_sql
@@ -199,7 +177,7 @@ class Clickhouse::Client::Query
     arg = join_value[1]
 
     if arg.present?
-      raise 'Unknown argument type: ' + val.class.name unless arg.is_a?(Clickhouse::Client::Query)
+      raise 'Unknown argument type: ' + val.class.name unless arg.is_a?(Clickhouse::Query)
       query.gsub('?', quote(arg))
     else
       query
@@ -208,7 +186,7 @@ class Clickhouse::Client::Query
 
   def _from_sql
     value = 
-      if from_value.is_a? Clickhouse::Client::Query
+      if from_value.is_a? Clickhouse::Query
         "(#{from_value.to_sql})" 
       else
         from_value

@@ -52,7 +52,7 @@ module Clickhouse::Client::Quote
   def _quote(value)
     case value
     when Array then "(#{value.map{|i| quote(i)}.join(', ')})"
-    when Clickhouse::Client::Query then "(#{value.to_sql})"
+    when Clickhouse::Query then "(#{value.to_sql})"
     when String, ActiveSupport::Multibyte::Chars
       "'#{quote_string(value.to_s)}'"
     when true       then quoted_true

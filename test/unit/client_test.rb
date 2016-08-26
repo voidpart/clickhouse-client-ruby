@@ -15,7 +15,7 @@ module Clickhouse
 
     def test_build
       query = @client.build 
-      assert query.is_a?(Clickhouse::Client::Query)
+      assert query.is_a?(Clickhouse::Query)
       assert_equal @client, query.client
     end
 

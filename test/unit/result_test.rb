@@ -25,8 +25,8 @@ module Clickhouse
       assert_equal 2, @result.count
     end
 
-    def test_total
-      assert_equal 2, @result.total
+    def test_total_entries
+      assert_equal 2, @result.total_entries
     end
   end
 end
