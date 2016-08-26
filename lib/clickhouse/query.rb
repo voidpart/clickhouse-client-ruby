@@ -8,7 +8,6 @@ class Clickhouse::Query
   include Resulting
 
   def execute(*args)
-    rows = client.query(to_sql)
     if args.length == 0
       result.to_a
     else
