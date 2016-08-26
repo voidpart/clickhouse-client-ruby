@@ -9,9 +9,9 @@ class Clickhouse::Query
 
   def execute(*args)
     if args.length == 0
-      result.to_a
+      to_a
     else
-      result.to_h(*args)
+      to_h(*args)
     end
   end
 end

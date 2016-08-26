@@ -23,6 +23,13 @@ module Clickhouse::Query::WillPaginate
     end
   end
 
+  def to_h(*args)
+    return super unless current_page
+    WillPaginate::Collection.create(current_page, limit_value, total_entries) do |pager|
+      pager.replace super
+    end
+  end
+
   def total_entries
     result.result_hash[:total_entries] ||= subquery_count
     result.total_entries 
