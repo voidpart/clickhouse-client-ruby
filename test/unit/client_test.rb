@@ -22,6 +22,8 @@ module Clickhouse
     def test_quote
       assert_equal '1', @client.quote(1)
       assert_equal "'#{Date.today.to_s(:db)}'", @client.quote(Date.today)
+      assert_equal "'#{Time.now.getutc.to_s(:db)}'", @client.quote(Time.now)
+      assert_equal "'#{Time.now.getutc.to_s(:db)}'", @client.quote(Time.current)
       assert_equal "'\\\\'", @client.quote('\\')
       assert_raises { @client.quote(nil) }
     end

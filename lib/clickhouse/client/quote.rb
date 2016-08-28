@@ -1,5 +1,6 @@
 require 'active_support/multibyte/chars'
 require 'active_support/duration'
+require 'active_support/core_ext/time' # For to_s(:db) support
 
 module Clickhouse::Client::Quote
   def quote(value)
@@ -18,19 +19,12 @@ module Clickhouse::Client::Quote
   # if the value is a Time responding to usec.
   def quoted_date(value)
     if value.acts_like?(:time)
-      zone_conversion_method = ActiveRecord::Base.default_timezone == :utc ? :getutc : :getlocal
-
-      if value.respond_to?(zone_conversion_method)
-        value = value.send(zone_conversion_method)
+      if value.respond_to?(:getutc)
+        value = value.getutc
       end
     end
 
     result = value.to_s(:db)
-    if value.respond_to?(:usec) && value.usec > 0
-      "#{result}.#{sprintf("%06d", value.usec)}"
-    else
-      result
-    end
   end
 
   def quoted_true
