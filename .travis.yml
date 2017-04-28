@@ -7,10 +7,12 @@ services:
 rvm:
   - 2.2
   - 2.3
+  - 2.4
 
 gemfile:
   - gemfiles/4.2.gemfile
   - gemfiles/5.0.gemfile
+  - gemfiles/5.1.gemfile
 
 before_install:
   - docker run -d -p 8123:8123 -p 9000:9000 yandex/clickhouse-server
